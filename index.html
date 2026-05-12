@@ -3,165 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTIC HHT - Unité d'Insuffisance Cardiaque</title>
+    <title>UTIC HHT - Plateforme Médicale</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
-        .card { background: white; border-radius: 1.25rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .btn-medical { background-color: #1e40af; transition: all 0.2s; }
-        .btn-medical:hover { background-color: #1e3a8a; transform: translateY(-1px); }
-        .animate-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .nav-active { color: #1e40af; border-bottom: 3px solid #1e40af; }
     </style>
 </head>
 <body>
     <div id="app">
         <!-- 1. LOGIN SCREEN -->
         <div v-if="!user" class="flex items-center justify-center min-h-screen p-6">
-            <div class="card w-full max-w-sm p-8 border-t-8 border-blue-800">
+            <div class="card w-full max-w-sm p-8 border-t-8 border-blue-900">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-black text-blue-900 tracking-tighter">UTIC HHT</h1>
-                    <p class="text-xs text-slate-400 font-bold uppercase mt-1">Hôpital Habib Thameur</p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Hôpital Habib Thameur</p>
                 </div>
                 <div class="space-y-4">
                     <input v-model="auth.id" type="text" placeholder="Identifiant" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-600">
                     <input v-model="auth.pass" type="password" placeholder="Mot de passe" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-600">
-                    <button @click="login" class="w-full btn-medical text-white font-bold py-4 rounded-2xl shadow-lg">CONNEXION</button>
+                    <button @click="login" class="w-full bg-blue-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-900 transition-all">CONNEXION</button>
                 </div>
-                <p v-if="loginError" class="text-red-500 text-xs mt-4 text-center font-bold">{{ loginError }}</p>
             </div>
         </div>
 
-        <!-- 2. APP INTERFACE -->
-        <div v-else class="animate-in">
-            <!-- Global Nav -->
+        <!-- 2. MAIN APP -->
+        <div v-else class="pb-20">
+            <!-- Header -->
             <nav class="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
-                <h2 class="font-black text-blue-900 tracking-tighter text-xl">UTIC HHT</h2>
-                <button @click="logout" class="bg-slate-100 p-2 rounded-full hover:bg-red-50 transition-colors">👋</button>
+                <h2 class="font-black text-blue-900">UTIC HHT</h2>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded capitalize">{{ user.role }}</span>
+                    <button @click="logout" class="text-slate-400">❌</button>
+                </div>
             </nav>
 
-            <!-- DOCTOR INTERFACE (Dr. Tlili / Admin) -->
-            <div v-if="user.role === 'admin'">
-                <div class="flex bg-white shadow-sm sticky top-[65px] z-40 overflow-x-auto">
-                    <button v-for="t in ['Alertes', 'Stats', 'RDV', 'Patients', 'Custom']" 
-                            @click="view = t" 
-                            :class="view === t ? 'text-blue-700 border-b-4 border-blue-700' : 'text-slate-400'"
-                            class="flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all">
-                        {{ t }}
-                    </button>
-                </div>
-
-                <main class="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-                    <!-- Alerts Tab -->
-                    <div v-if="view === 'Alertes'" class="space-y-4">
-                        <div v-if="receivedAlerts.length === 0" class="text-center py-20 text-slate-400 italic">Aucune alerte reçue.</div>
-                        <div v-for="a in receivedAlerts" :key="a.time" class="card p-5 border-l-8 border-red-500 flex justify-between items-center animate-pulse">
-                            <div>
-                                <p class="text-sm font-bold text-slate-500">Patient: <span class="text-blue-900">{{ a.patientId }}</span></p>
-                                <p class="text-lg font-black text-red-600">{{ a.signs.join(' + ') }}</p>
-                                <p class="text-[10px] text-slate-400 mt-1 uppercase">{{ a.date }} • {{ a.time }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stats Tab -->
-                    <div v-if="view === 'Stats'" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4 text-white">
-                            <div class="card p-6 bg-blue-800 text-center">
-                                <p class="text-[10px] font-bold uppercase opacity-70">Total Patients</p>
-                                <p class="text-4xl font-black">{{ patients.length }}</p>
-                            </div>
-                            <div class="card p-6 bg-red-600 text-center">
-                                <p class="text-[10px] font-bold uppercase opacity-70">Alertes Reçues</p>
-                                <p class="text-4xl font-black">{{ receivedAlerts.length }}</p>
-                            </div>
-                        </div>
-                        <div class="card p-6">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-6 tracking-widest">Activité Mensuelle</h3>
-                            <div v-for="(count, month) in statsByMonth" :key="month" class="mb-4">
-                                <div class="flex justify-between text-sm font-bold mb-1"><span>{{ month }}</span><span>{{ count }}</span></div>
-                                <div class="w-full bg-slate-100 rounded-full h-3">
-                                    <div class="bg-blue-600 h-3 rounded-full transition-all" :style="{ width: (count * 10) + '%' }"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RDV Tab -->
-                    <div v-if="view === 'RDV'" class="card p-6">
-                        <input type="date" v-model="currentDate" class="w-full p-4 border-2 border-slate-100 rounded-2xl mb-6 font-bold text-blue-900">
-                        <div class="space-y-2">
-                            <div v-for="n in 10" :key="n" class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center">
-                                <span class="text-xs font-black text-slate-400">#{{ n }}</span>
-                                <span v-if="getRDV(n)" class="font-bold text-blue-800">Patient: {{ getRDV(n).pId }}</span>
-                                <button v-else @click="addRDV(n)" class="bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-[10px] font-bold">PROGRAMMER</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Manage Patients Tab -->
-                    <div v-if="view === 'Patients'" class="space-y-4">
-                        <div class="card p-6 border-l-8 border-green-500">
-                            <h3 class="font-bold text-slate-800 mb-4">Nouveau Profil</h3>
-                            <div class="grid gap-3">
-                                <input v-model="newPatient.id" placeholder="ID (ex: PAT001)" class="p-3 border rounded-xl">
-                                <input v-model="newPatient.pass" placeholder="Mot de passe" class="p-3 border rounded-xl">
-                                <button @click="createPatient" class="bg-green-600 text-white font-bold py-3 rounded-xl">CRÉER LE COMPTE</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Customise Tab -->
-                    <div v-if="view === 'Custom'" class="card p-6">
-                        <h3 class="font-bold mb-4">Traductions et Libellés (Arabe/Français)</h3>
-                        <div v-for="(val, key) in customLabels" :key="key" class="mb-4">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ key }}</label>
-                            <input v-model="customLabels[key]" class="w-full p-3 bg-slate-50 border rounded-xl font-bold">
-                        </div>
-                    </div>
-                </main>
+            <!-- NAVIGATION ADMIN / INFIRMIER -->
+            <div v-if="user.role !== 'patient'" class="flex bg-white shadow-sm sticky top-[61px] z-40 overflow-x-auto">
+                <button @click="view = 'Alertes'" :class="view === 'Alertes' ? 'nav-active' : 'text-slate-400'" class="flex-1 py-4 text-[10px] font-black uppercase">Alertes</button>
+                <button @click="view = 'RDV'" :class="view === 'RDV' ? 'nav-active' : 'text-slate-400'" class="flex-1 py-4 text-[10px] font-black uppercase">RDV</button>
+                <button @click="view = 'Patients'" :class="view === 'Patients' ? 'nav-active' : 'text-slate-400'" class="flex-1 py-4 text-[10px] font-black uppercase">Patients</button>
+                <button v-if="user.role === 'admin'" @click="view = 'Stats'" :class="view === 'Stats' ? 'nav-active' : 'text-slate-400'" class="flex-1 py-4 text-[10px] font-black uppercase">Stats</button>
+                <button v-if="user.role === 'admin'" @click="view = 'Custom'" :class="view === 'Custom' ? 'nav-active' : 'text-slate-400'" class="flex-1 py-4 text-[10px] font-black uppercase text-orange-600">Customise</button>
             </div>
 
-            <!-- PATIENT INTERFACE -->
-            <main v-else class="p-6 max-w-md mx-auto space-y-6 pb-20">
-                <!-- Info RDV -->
-                <div class="card p-6 bg-gradient-to-br from-blue-800 to-blue-950 text-white shadow-xl">
-                    <p class="text-[10px] font-bold opacity-60 uppercase tracking-widest">Prochain Rendez-vous</p>
-                    <p class="text-2xl font-black mt-2">{{ myRDV || 'En attente...' }}</p>
-                </div>
-
-                <!-- Saisie Constantes -->
-                <div class="card p-6 space-y-4 shadow-sm border border-slate-100">
-                    <h3 class="font-black text-blue-900 text-lg uppercase tracking-tight">Mesures Vitales</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div v-for="f in fields" :key="f.id" class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                            <label class="text-[10px] font-black text-slate-400 uppercase">{{ f.label }}</label>
-                            <input v-model="form[f.id]" :placeholder="f.ex" class="w-full bg-transparent font-bold text-blue-800 outline-none">
+            <main class="p-4 max-w-4xl mx-auto space-y-6">
+                
+                <!-- VUE DOCTEUR / INFIRMIER -->
+                <div v-if="user.role !== 'patient'">
+                    <!-- Alertes -->
+                    <div v-if="view === 'Alertes'" class="space-y-4">
+                        <div v-for="a in receivedAlerts" class="card p-5 border-l-8 border-red-600">
+                            <p class="font-bold text-blue-900">Patient: {{ a.patientId }}</p>
+                            <p class="text-red-600 font-bold uppercase">{{ a.signs.join(', ') }}</p>
+                            <p v-if="a.text" class="text-sm italic text-slate-600 mt-2">"{{ a.text }}"</p>
+                            <div v-if="a.file" class="mt-2 text-blue-600 underline text-xs">📎 Bilan joint (image)</div>
+                            <p class="text-[10px] text-slate-400 mt-2 uppercase font-bold">{{ a.date }} - {{ a.time }}</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Signes d'alerte -->
-                <div class="card p-6 shadow-lg">
-                    <h3 class="font-black text-red-600 text-lg uppercase tracking-tight mb-6">Signes d'alerte</h3>
-                    <div class="space-y-4">
-                        <div v-for="s in symptomsList" :key="s.id" 
-                             @click="toggleSymptom(s.id)"
-                             :class="form.selectedSigns.includes(s.id) ? 'border-red-500 bg-red-50 shadow-inner' : 'border-slate-100'"
-                             class="flex items-center p-4 border-2 rounded-3xl cursor-pointer transition-all active:scale-95">
-                            <img :src="s.img" class="w-14 h-14 mr-4 p-1 bg-white rounded-full shadow-sm">
-                            <div class="flex-1">
-                                <p class="font-bold text-blue-900">{{ customLabels[s.id] || s.name }}</p>
+                    <!-- RDV -->
+                    <div v-if="view === 'RDV'" class="card p-6">
+                        <input type="date" v-model="currentDate" class="w-full p-4 border rounded-2xl mb-4 font-bold text-blue-900">
+                        <div class="space-y-2">
+                            <div v-for="n in 10" class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-400">#{{ n }}</span>
+                                <span v-if="getRDV(n)" class="font-bold text-blue-800 italic">{{ getRDV(n).pId }}</span>
+                                <button v-else @click="addRDV(n)" class="bg-blue-800 text-white px-3 py-1 rounded-full text-[10px]">Fixer</button>
                             </div>
-                            <div v-if="form.selectedSigns.includes(s.id)" class="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
                         </div>
                     </div>
-                    <button @click="submitData" class="w-full bg-red-600 text-white font-black py-5 rounded-3xl shadow-xl mt-8 tracking-widest uppercase active:scale-95 transition-all">
-                        Transmettre au Service
-                    </button>
+
+                    <!-- Customise (Admin Only) -->
+                    <div v-if="view === 'Custom'" class="space-y-4">
+                        <div class="card p-6">
+                            <h3 class="font-bold text-blue-900 mb-4 uppercase text-xs">Modifier les symptômes & Images</h3>
+                            <div v-for="s in symptomsList" :key="s.id" class="p-4 border rounded-2xl mb-4 space-y-2">
+                                <input v-model="customLabels[s.id]" placeholder="Nom en Arabe/Français" class="w-full p-2 border rounded-lg">
+                                <input v-model="s.img" placeholder="URL de l'image (ex: https://...)" class="w-full p-2 border rounded-lg text-xs text-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VUE PATIENT -->
+                <div v-else class="space-y-6">
+                    <!-- Changer Mot de Passe -->
+                    <div v-if="showPassChange" class="card p-6 bg-orange-50 border-orange-200">
+                        <h3 class="font-bold text-orange-800 text-sm mb-2">Sécurité : Changez votre mot de passe</h3>
+                        <input v-model="newPass" type="password" placeholder="Nouveau mot de passe" class="w-full p-3 border rounded-xl mb-2">
+                        <button @click="updatePassword" class="bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Mettre à jour</button>
+                    </div>
+
+                    <div class="card p-6 bg-blue-900 text-white">
+                        <p class="text-[10px] uppercase font-bold opacity-60 tracking-widest">Rendez-vous à l'HHT</p>
+                        <p class="text-2xl font-black">{{ myRDV || 'Aucun RDV fixé' }}</p>
+                    </div>
+
+                    <!-- Constantes -->
+                    <div class="card p-6 space-y-4">
+                        <h3 class="font-bold text-blue-900 uppercase text-xs tracking-widest">Mesures Vitales</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div v-for="f in fields" class="bg-slate-50 p-3 rounded-2xl">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">{{ f.label }}</label>
+                                <input v-model="form[f.id]" :placeholder="f.ex" class="w-full bg-transparent font-bold text-blue-900 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Signes d'alerte -->
+                    <div class="card p-6">
+                        <h3 class="font-bold text-red-600 uppercase text-xs tracking-widest mb-4">Avez-vous ces signes ?</h3>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div v-for="s in symptomsList" @click="toggleSymptom(s.id)" :class="form.selectedSigns.includes(s.id) ? 'border-red-500 bg-red-50' : 'border-slate-100'" class="flex items-center p-4 border-2 rounded-3xl cursor-pointer transition-all">
+                                <img :src="s.img" class="w-12 h-12 mr-4 bg-white p-1 rounded-full border shadow-sm">
+                                <span class="font-bold flex-1">{{ customLabels[s.id] || s.name }}</span>
+                                <span v-if="form.selectedSigns.includes(s.id)" class="text-red-600 font-bold">✓</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Texte libre & Upload -->
+                        <div class="mt-6 space-y-4">
+                            <textarea v-model="form.text" placeholder="Décrivez vos symptômes ici..." class="w-full p-4 bg-slate-50 border rounded-2xl h-24 text-sm"></textarea>
+                            <div class="border-2 border-dashed border-slate-200 p-4 rounded-2xl text-center">
+                                <p class="text-xs font-bold text-slate-500 mb-2">Envoyer un bilan (Photo/PDF)</p>
+                                <input type="file" @change="handleFile" class="text-[10px]">
+                            </div>
+                        </div>
+
+                        <button @click="submitData" class="w-full bg-red-600 text-white font-black py-5 rounded-3xl shadow-xl mt-8 uppercase tracking-widest active:scale-95 transition-all">Transmettre au Service</button>
+                    </div>
                 </div>
             </main>
         </div>
@@ -171,107 +145,93 @@
         const { createApp, ref, computed } = Vue
         createApp({
             setup() {
-                // AUTH & VIEW
                 const user = ref(null);
                 const view = ref('Alertes');
                 const auth = ref({ id: '', pass: '' });
-                const loginError = ref('');
-
-                // DOCTOR DATA
-                const patients = ref([{ id: 'P001', pass: '123' }]);
-                const newPatient = ref({ id: '', pass: '' });
-                const rdvList = ref([]);
-                const receivedAlerts = ref([]);
                 const currentDate = ref(new Date().toISOString().substr(0,10));
                 
-                // CUSTOMIZATION
-                const customLabels = ref({
-                    'dyspnee': 'ضيق تنفس (Dyspnée)',
-                    'fatigue': 'تعب شديد (Fatigue)',
-                    'oedeme': 'انتفاخ القدمين (Oedème)'
-                });
+                // DATA
+                const patients = ref([{ id: 'P001', pass: '123', firstLogin: true }]);
+                const rdvList = ref([]);
+                const receivedAlerts = ref([]);
+                const showPassChange = ref(false);
+                const newPass = ref('');
 
-                const symptomsList = [
+                // CUSTOMIZATION
+                const customLabels = ref({ 'dyspnee': 'ضيق تنفس', 'fatigue': 'تعب شديد', 'oedeme': 'انتفاخ القدمين' });
+                const symptomsList = ref([
                     { id: 'dyspnee', name: 'Dyspnée', img: 'https://cdn-icons-png.flaticon.com/512/2853/2853925.png' },
                     { id: 'fatigue', name: 'Fatigue', img: 'https://cdn-icons-png.flaticon.com/512/3094/3094833.png' },
                     { id: 'oedeme', name: 'Oedème', img: 'https://cdn-icons-png.flaticon.com/512/4862/4862413.png' }
-                ];
+                ]);
 
-                const fields = [
-                    { id: 'ta', label: 'Tension', ex: '12/8' },
-                    { id: 'fc', label: 'Fréq. Cardiaque', ex: '70' },
-                    { id: 'spo2', label: 'Saturation O2', ex: '98%' },
-                    { id: 'poids', label: 'Poids (kg)', ex: '75' }
-                ];
+                const fields = ref([{ id: 'ta', label: 'Tension', ex: '12/8' }, { id: 'fc', label: 'Pouls', ex: '70' }, { id: 'spo2', label: 'Satur. O2', ex: '98%' }, { id: 'poids', label: 'Poids', ex: '75kg' }]);
+                const form = ref({ ta: '', fc: '', spo2: '', poids: '', text: '', selectedSigns: [], file: null });
 
-                const form = ref({ ta: '', fc: '', spo2: '', poids: '', selectedSigns: [] });
-
-                // METHODS
+                // AUTH
                 const login = () => {
                     if(auth.value.id === 'admin' && auth.value.pass === 'adminhht') {
                         user.value = { id: 'Dr. Tlili', role: 'admin' };
+                    } else if(auth.value.id === 'infirmier' && auth.value.pass === 'hht2024') {
+                        user.value = { id: 'Infirmier', role: 'infirmier' };
+                        view.value = 'Alertes';
                     } else {
                         const p = patients.value.find(x => x.id === auth.value.id && x.pass === auth.value.pass);
-                        if(p) user.value = { id: p.id, role: 'patient' };
-                        else loginError.value = "Identifiants invalides.";
+                        if(p) {
+                            user.value = { ...p, role: 'patient' };
+                            if(p.firstLogin) showPassChange.value = true;
+                        } else alert("Identifiants incorrects");
                     }
                 };
 
-                const logout = () => { user.value = null; auth.value = { id: '', pass: '' }; loginError.value = ''; };
-
-                const createPatient = () => {
-                    if(newPatient.value.id && newPatient.value.pass) {
-                        patients.value.push({...newPatient.value});
-                        alert("Profil patient créé !");
-                        newPatient.value = { id: '', pass: '' };
+                const updatePassword = () => {
+                    if(newPass.value.length > 2) {
+                        const p = patients.value.find(x => x.id === user.value.id);
+                        p.pass = newPass.value;
+                        p.firstLogin = false;
+                        showPassChange.value = false;
+                        alert("Mot de passe sécurisé !");
                     }
                 };
 
-                const addRDV = (n) => {
-                    const id = prompt("Entrez l'ID du patient :");
-                    if(id) rdvList.value.push({ slot: n, date: currentDate.value, pId: id });
-                };
+                const logout = () => { user.value = null; auth.value = {id:'', pass:''}; };
 
-                const getRDV = (n) => rdvList.value.find(r => r.date === currentDate.value && r.slot === n);
-
+                // LOGIC
                 const toggleSymptom = (id) => {
                     const idx = form.value.selectedSigns.indexOf(id);
                     if(idx > -1) form.value.selectedSigns.splice(idx, 1);
                     else form.value.selectedSigns.push(id);
                 };
 
+                const handleFile = (e) => { form.value.file = e.target.files[0]; };
+
                 const submitData = () => {
-                    if(form.value.selectedSigns.length > 0) {
-                        const now = new Date();
-                        receivedAlerts.value.unshift({
-                            patientId: user.value.id,
-                            signs: form.value.selectedSigns.map(s => customLabels.value[s] || s),
-                            date: now.toLocaleDateString('fr-FR'),
-                            time: now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})
-                        });
-                    }
-                    alert("Informations transmises au Dr. Tlili.");
-                    form.value = { ta: '', fc: '', spo2: '', poids: '', selectedSigns: [] };
+                    const now = new Date();
+                    receivedAlerts.value.unshift({
+                        patientId: user.value.id,
+                        signs: form.value.selectedSigns.map(s => customLabels.value[s] || s),
+                        text: form.value.text,
+                        file: form.value.file ? true : false,
+                        date: now.toLocaleDateString(),
+                        time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                    });
+                    alert("Informations envoyées au Dr. Tlili.");
+                    form.value = { ta:'', fc:'', spo2:'', poids:'', text:'', selectedSigns:[], file:null };
                 };
 
-                // COMPUTED STATS
+                const addRDV = (n) => {
+                    const pId = prompt("ID Patient ?");
+                    if(pId) rdvList.value.push({ slot: n, date: currentDate.value, pId });
+                };
+
+                const getRDV = (n) => rdvList.value.find(r => r.date === currentDate.value && r.slot === n);
+
                 const myRDV = computed(() => {
-                    const res = rdvList.value.find(r => r.pId === user.value?.id);
-                    return res ? `${res.date} (Créneau #${res.slot})` : null;
+                    const r = rdvList.value.find(x => x.pId === user.value?.id);
+                    return r ? `${r.date} (Créneau #${r.slot})` : null;
                 });
 
-                const statsByMonth = computed(() => {
-                    const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin"];
-                    const stats = {};
-                    months.forEach(m => stats[m] = 0);
-                    rdvList.value.forEach(r => {
-                        const m = months[new Date(r.date).getMonth()];
-                        if(stats[m] !== undefined) stats[m]++;
-                    });
-                    return stats;
-                });
-
-                return { user, auth, login, logout, loginError, view, fields, form, symptomsList, toggleSymptom, submitData, receivedAlerts, currentDate, addRDV, getRDV, myRDV, customLabels, patients, newPatient, createPatient, statsByMonth }
+                return { user, auth, login, logout, view, fields, form, symptomsList, toggleSymptom, submitData, receivedAlerts, currentDate, addRDV, getRDV, myRDV, customLabels, showPassChange, newPass, updatePassword, handleFile };
             }
         }).mount('#app')
     </script>
