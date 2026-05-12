@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTIC HHT</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#E30613">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .tunisie-gradient { background: linear-gradient(135deg, #E30613 0%, #c10510 100%); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+    <div id="app">
+        <!-- Connexion -->
+        <div v-if="!isLoggedIn" class="flex items-center justify-center min-h-screen p-6">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-8 card-shadow border-t-8 border-red-600">
+                <div class="text-center mb-8">
+                    <div class="inline-block p-4 rounded-full bg-red-50 mb-4">
+                        <svg width="60" height="60" viewBox="0 0 100 100">
+                            <path d="M50 85c-1.5 0-3-.5-4.2-1.5C32 73 15 55 15 37c0-12 10-22 22-22 5.5 0 10.5 2 13 6 2.5-4 7.5-6 13-6 12 0 22 10 22 22 0 18-17 36-30.8 46.5-1.2 1-2.7 1.5-4.2 1.5z" fill="#E30613"/>
+                            <circle cx="53" cy="38" r="12" fill="white"/>
+                            <circle cx="55" cy="38" r="10" fill="#E30613"/>
+                            <polygon points="55,32 57,37 62,37 58,40 59,45 55,42 51,45 52,40 48,37 53,37" fill="white"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-800 tracking-tight">UTIC HHT</h1>
+                    <p class="text-slate-500 text-sm">Hôpital Habib Thameur</p>
+                </div>
+                <input v-model="loginId" type="text" placeholder="Identifiant (ex: admin ou ID)" 
+                       class="w-full p-4 bg-slate-100 rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                <button @click="login" class="w-full tunisie-gradient text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
+                    ACCÉDER
+                </button>
+            </div>
+        </div>
+
+        <!-- App une fois connecté -->
+        <div v-else>
+            <nav class="bg-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-slate-100">
+                <span class="font-black text-red-600 tracking-tighter text-xl">UTIC HHT</span>
+                <button @click="logout" class="text-xs font-bold text-slate-400 border border-slate-200 px-3 py-1 rounded-full">SORTIR</button>
+            </nav>
+
+            <!-- Dashboard Docteur -->
+            <div v-if="loginId === 'admin'" class="p-6 max-w-2xl mx-auto">
+                <h2 class="text-lg font-bold mb-4">Alertes Prioritaires (Dr. Tlili)</h2>
+                <div class="space-y-3">
+                    <div v-for="a in alerts" class="bg-white p-4 rounded-2xl border-l-4 border-red-500 card-shadow flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-bold">Patient ID: {{a.id}}</p>
+                            <p class="text-xs text-red-600 font-medium">{{a.msg}}</p>
+                        </div>
+                        <span class="bg-red-50 text-red-600 text-[10px] px-2 py-1 rounded-full font-bold">URGENT</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interface Patient -->
+            <div v-else class="p-6 max-w-md mx-auto space-y-6">
+                <div class="bg-white p-6 rounded-3xl card-shadow">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center">🩺 Mes Constantes</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-2xl">
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Tension</label>
+                            <input v-model="form.ta" type="text" placeholder="12/8" class="bg-transparent w-full font-bold outline-none">
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl">
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Pouls</label>
+                            <input v-model="form.fc" type="number" placeholder="75" class="bg-transparent w-full font-bold outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl card-shadow">
+                    <h3 class="font-bold text-red-600 mb-4 flex items-center">⚠️ Signes d'alerte</h3>
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <button v-for="s in ['Dyspnée', 'Fatigue', 'Œdèmes']" :key="s" 
+                                @click="toggleS(s)"
+                                :class="form.signs.includes(s) ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'"
+                                class="py-3 px-2 rounded-xl text-xs font-bold transition-all">
+                            {{s}}
+                        </button>
+                    </div>
+                    <textarea v-model="form.note" placeholder="Note pour le Dr Tlili..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm h-24 outline-none border-none"></textarea>
+                </div>
+
+                <div class="bg-white p-4 rounded-3xl border-2 border-dashed border-slate-200 text-center">
+                    <p class="text-sm font-bold text-slate-500 mb-2">📸 Bilan Biologique</p>
+                    <input type="file" accept="image/*" class="text-xs">
+                </div>
+
+                <button @click="send" class="w-full tunisie-gradient text-white font-bold py-5 rounded-3xl shadow-xl">
+                    ENVOYER LES DONNÉES
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue
+        createApp({
+            setup() {
+                const isLoggedIn = ref(false)
+                const loginId = ref('')
+                const form = ref({ ta: '', fc: '', signs: [], note: '' })
+                const alerts = ref([{id: 'PAT-705', msg: 'Dyspnée + Tension 16/9'}, {id: 'PAT-112', msg: 'Œdèmes importants'}])
+                
+                const login = () => { if(loginId.value) isLoggedIn.ref = true; isLoggedIn.value = true; }
+                const logout = () => { isLoggedIn.value = false; loginId.value = ''; }
+                const toggleS = (s) => {
+                    const i = form.value.signs.indexOf(s);
+                    if(i > -1) form.value.signs.splice(i, 1);
+                    else form.value.signs.push(s);
+                }
+                const send = () => { 
+                    alert("Données transmises au service UTIC. Merci.");
+                    form.value = { ta: '', fc: '', signs: [], note: '' };
+                }
+
+                return { isLoggedIn, loginId, login, logout, form, toggleS, send, alerts }
+            }
+        }).mount('#app')
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
