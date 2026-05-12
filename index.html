@@ -3,131 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTIC HHT</title>
+    <title>UTIC HHT - Gestion Médicale</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#E30613">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        .tunisie-gradient { background: linear-gradient(135deg, #E30613 0%, #c10510 100%); }
-        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .bg-medical { background-color: #f0f7ff; }
+        .btn-blue { background-color: #1e40af; color: white; }
+        .btn-blue:hover { background-color: #1e3a8a; }
+        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans">
+<body class="bg-medical min-h-screen font-sans text-slate-800">
     <div id="app">
-        <!-- Connexion -->
-        <div v-if="!isLoggedIn" class="flex items-center justify-center min-h-screen p-6">
-            <div class="bg-white w-full max-w-sm rounded-3xl p-8 card-shadow border-t-8 border-red-600">
-                <div class="text-center mb-8">
-                    <div class="inline-block p-4 rounded-full bg-red-50 mb-4">
-                        <svg width="60" height="60" viewBox="0 0 100 100">
-                            <path d="M50 85c-1.5 0-3-.5-4.2-1.5C32 73 15 55 15 37c0-12 10-22 22-22 5.5 0 10.5 2 13 6 2.5-4 7.5-6 13-6 12 0 22 10 22 22 0 18-17 36-30.8 46.5-1.2 1-2.7 1.5-4.2 1.5z" fill="#E30613"/>
-                            <circle cx="53" cy="38" r="12" fill="white"/>
-                            <circle cx="55" cy="38" r="10" fill="#E30613"/>
-                            <polygon points="55,32 57,37 62,37 58,40 59,45 55,42 51,45 52,40 48,37 53,37" fill="white"/>
-                        </svg>
-                    </div>
-                    <h1 class="text-2xl font-bold text-slate-800 tracking-tight">UTIC HHT</h1>
-                    <p class="text-slate-500 text-sm">Hôpital Habib Thameur</p>
+        <!-- LOGIN SCREEN -->
+        <div v-if="!currentUser" class="flex items-center justify-center min-h-screen p-6">
+            <div class="card w-full max-w-sm p-8 border-t-4 border-blue-800">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tighter">UTIC HHT</h1>
+                    <p class="text-xs text-slate-500 italic">Unité d'Insuffisance Cardiaque</p>
                 </div>
-                <input v-model="loginId" type="text" placeholder="Identifiant (ex: admin ou ID)" 
-                       class="w-full p-4 bg-slate-100 rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-red-500 transition-all">
-                <button @click="login" class="w-full tunisie-gradient text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-                    ACCÉDER
-                </button>
+                <div class="space-y-4">
+                    <input v-model="loginForm.id" type="text" placeholder="Identifiant" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <input v-model="loginForm.password" type="password" placeholder="Mot de passe" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <button @click="handleLogin" class="w-full btn-blue py-3 rounded-xl font-bold transition-all">SE CONNECTER</button>
+                </div>
+                <p v-if="loginError" class="text-red-500 text-xs mt-4 text-center">{{ loginError }}</p>
             </div>
         </div>
 
-        <!-- App une fois connecté -->
+        <!-- APP INTERFACE -->
         <div v-else>
-            <nav class="bg-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-slate-100">
-                <span class="font-black text-red-600 tracking-tighter text-xl">UTIC HHT</span>
-                <button @click="logout" class="text-xs font-bold text-slate-400 border border-slate-200 px-3 py-1 rounded-full">SORTIR</button>
+            <nav class="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shadow-lg sticky top-0 z-50">
+                <div>
+                    <span class="font-bold">UTIC HHT</span>
+                    <span class="ml-2 text-[10px] bg-blue-700 px-2 py-0.5 rounded">{{ currentUser.role }}</span>
+                </div>
+                <button @click="logout" class="text-xs opacity-70 border border-white px-2 py-1 rounded">Déconnexion</button>
             </nav>
 
-            <!-- Dashboard Docteur -->
-            <div v-if="loginId === 'admin'" class="p-6 max-w-2xl mx-auto">
-                <h2 class="text-lg font-bold mb-4">Alertes Prioritaires (Dr. Tlili)</h2>
-                <div class="space-y-3">
-                    <div v-for="a in alerts" class="bg-white p-4 rounded-2xl border-l-4 border-red-500 card-shadow flex justify-between items-center">
+            <!-- DOCTOR DASHBOARD (Dr. Tlili) -->
+            <main v-if="currentUser.role === 'admin'" class="p-4 max-w-4xl mx-auto space-y-6">
+                
+                <!-- Gestion Patients : Création de compte -->
+                <section class="card p-6 border-l-4 border-green-500">
+                    <h2 class="font-bold text-blue-900 mb-4 flex items-center">👤 Créer un Profil Patient</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input v-model="newUser.id" type="text" placeholder="ID Patient (ex: HHT-001)" class="p-2 border rounded-lg text-sm">
+                        <input v-model="newUser.password" type="text" placeholder="Mot de passe" class="p-2 border rounded-lg text-sm">
+                        <button @click="createPatient" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-green-700">Créer le compte</button>
+                    </div>
+                </section>
+
+                <!-- Calendrier des RDV (Max 10/jour) -->
+                <section class="card p-6">
+                    <h2 class="font-bold text-blue-900 mb-4 flex items-center">📅 Planning des RDV</h2>
+                    <input type="date" v-model="selectedDate" class="mb-4 p-2 border rounded-lg text-sm">
+                    <div class="space-y-2">
+                        <div v-for="i in 10" :key="i" class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
+                            <span class="text-xs font-bold text-slate-400">Créneau {{ i }}</span>
+                            <div v-if="getAppointment(i)" class="text-sm font-bold text-blue-700">
+                                Patient: {{ getAppointment(i).patientId }}
+                            </div>
+                            <button v-else @click="fixAppointment(i)" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase">Fixer RDV</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Alertes -->
+                <section class="card p-6">
+                    <h2 class="font-bold text-red-600 mb-4">🔔 Alertes Symptômes</h2>
+                    <div class="space-y-3 text-sm">
+                        <div v-for="a in alerts" class="p-3 bg-red-50 rounded-lg border border-red-100 flex justify-between items-center">
+                            <span><strong>{{ a.patientId }}</strong> : {{ a.symptom }}</span>
+                            <span class="text-[10px] text-slate-400">{{ a.time }}</span>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- PATIENT DASHBOARD -->
+            <main v-else class="p-4 max-w-md mx-auto space-y-6">
+                <!-- Info RDV (Customisé par Admin) -->
+                <section class="card p-6 border-t-8 border-blue-900">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Mon Prochain Rendez-vous</h2>
+                    <div class="bg-blue-50 p-4 rounded-xl text-center">
+                        <p v-if="myAppointment" class="text-xl font-black text-blue-900">{{ myAppointment }}</p>
+                        <p v-else class="text-slate-500 italic">Aucun rendez-vous fixé pour le moment.</p>
+                    </div>
+                </section>
+
+                <!-- Saisie Données -->
+                <section class="card p-6 space-y-4">
+                    <h2 class="font-bold text-blue-900">📊 Mesures du jour</h2>
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <p class="text-sm font-bold">Patient ID: {{a.id}}</p>
-                            <p class="text-xs text-red-600 font-medium">{{a.msg}}</p>
+                            <label class="text-[10px] font-bold text-slate-400">Tension (ex: 12/8)</label>
+                            <input v-model="form.ta" type="text" class="w-full p-2 bg-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <span class="bg-red-50 text-red-600 text-[10px] px-2 py-1 rounded-full font-bold">URGENT</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Interface Patient -->
-            <div v-else class="p-6 max-w-md mx-auto space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-shadow">
-                    <h3 class="font-bold text-slate-800 mb-4 flex items-center">🩺 Mes Constantes</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 p-3 rounded-2xl">
-                            <label class="text-[10px] uppercase font-bold text-slate-400">Tension</label>
-                            <input v-model="form.ta" type="text" placeholder="12/8" class="bg-transparent w-full font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-2xl">
-                            <label class="text-[10px] uppercase font-bold text-slate-400">Pouls</label>
-                            <input v-model="form.fc" type="number" placeholder="75" class="bg-transparent w-full font-bold outline-none">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400">Pouls (BPM)</label>
+                            <input v-model="form.fc" type="number" class="w-full p-2 bg-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-3xl card-shadow">
-                    <h3 class="font-bold text-red-600 mb-4 flex items-center">⚠️ Signes d'alerte</h3>
-                    <div class="grid grid-cols-2 gap-2 mb-4">
-                        <button v-for="s in ['Dyspnée', 'Fatigue', 'Œdèmes']" :key="s" 
-                                @click="toggleS(s)"
-                                :class="form.signs.includes(s) ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'"
-                                class="py-3 px-2 rounded-xl text-xs font-bold transition-all">
-                            {{s}}
-                        </button>
-                    </div>
-                    <textarea v-model="form.note" placeholder="Note pour le Dr Tlili..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm h-24 outline-none border-none"></textarea>
-                </div>
-
-                <div class="bg-white p-4 rounded-3xl border-2 border-dashed border-slate-200 text-center">
-                    <p class="text-sm font-bold text-slate-500 mb-2">📸 Bilan Biologique</p>
-                    <input type="file" accept="image/*" class="text-xs">
-                </div>
-
-                <button @click="send" class="w-full tunisie-gradient text-white font-bold py-5 rounded-3xl shadow-xl">
-                    ENVOYER LES DONNÉES
-                </button>
-            </div>
+                    <button @click="submitData" class="w-full btn-blue py-4 rounded-2xl font-bold shadow-lg">ENVOYER AU DOCTEUR</button>
+                </section>
+            </main>
         </div>
     </div>
 
     <script>
-        const { createApp, ref } = Vue
+        const { createApp, ref, computed } = Vue
         createApp({
             setup() {
-                const isLoggedIn = ref(false)
-                const loginId = ref('')
-                const form = ref({ ta: '', fc: '', signs: [], note: '' })
-                const alerts = ref([{id: 'PAT-705', msg: 'Dyspnée + Tension 16/9'}, {id: 'PAT-112', msg: 'Œdèmes importants'}])
+                const currentUser = ref(null)
+                const loginForm = ref({ id: '', password: '' })
+                const loginError = ref('')
+                const selectedDate = ref(new Date().toISOString().substr(0, 10))
                 
-                const login = () => { if(loginId.value) isLoggedIn.ref = true; isLoggedIn.value = true; }
-                const logout = () => { isLoggedIn.value = false; loginId.value = ''; }
-                const toggleS = (s) => {
-                    const i = form.value.signs.indexOf(s);
-                    if(i > -1) form.value.signs.splice(i, 1);
-                    else form.value.signs.push(s);
-                }
-                const send = () => { 
-                    alert("Données transmises au service UTIC. Merci.");
-                    form.value = { ta: '', fc: '', signs: [], note: '' };
+                // Données simulées (En réalité, cela viendrait d'une base de données)
+                const patients = ref([
+                    { id: 'PAT001', password: '123', appointment: '25 Mai 2024 à 10h00' }
+                ])
+                const newUser = ref({ id: '', password: '' })
+                const appointments = ref([
+                    { slot: 1, date: '2024-05-25', patientId: 'PAT001' }
+                ])
+                const alerts = ref([
+                    { patientId: 'PAT001', symptom: 'Dyspnée d\'effort', time: 'Il y a 10 min' }
+                ])
+                const form = ref({ ta: '', fc: '' })
+
+                const handleLogin = () => {
+                    if (loginForm.value.id === 'admin' && loginForm.value.password === 'adminhht') {
+                        currentUser.value = { id: 'admin', role: 'admin' }
+                    } else {
+                        const p = patients.value.find(u => u.id === loginForm.value.id && u.password === loginForm.value.password)
+                        if (p) currentUser.value = { ...p, role: 'patient' }
+                        else loginError.value = "Identifiant ou mot de passe incorrect."
+                    }
                 }
 
-                return { isLoggedIn, loginId, login, logout, form, toggleS, send, alerts }
+                const logout = () => { currentUser.value = null; loginForm.value = { id: '', password: '' }; }
+
+                const createPatient = () => {
+                    if (newUser.value.id && newUser.value.password) {
+                        patients.value.push({ ...newUser.value, appointment: null })
+                        alert(`Profil pour ${newUser.value.id} créé !`)
+                        newUser.value = { id: '', password: '' }
+                    }
+                }
+
+                const getAppointment = (slot) => {
+                    return appointments.value.find(a => a.slot === slot && a.date === selectedDate.value)
+                }
+
+                const fixAppointment = (slot) => {
+                    const pId = prompt("Entrez l'ID du patient pour ce créneau :")
+                    if (pId) appointments.value.push({ slot, date: selectedDate.value, patientId: pId })
+                }
+
+                const myAppointment = computed(() => {
+                    if (currentUser.value?.role === 'patient') {
+                        const app = appointments.value.find(a => a.patientId === currentUser.value.id)
+                        return app ? `${app.date} (Créneau ${app.slot})` : null
+                    }
+                    return null
+                })
+
+                const submitData = () => {
+                    alert("Données transmises avec succès au Dr. Tlili.")
+                    form.value = { ta: '', fc: '' }
+                }
+
+                return { currentUser, loginForm, loginError, handleLogin, logout, newUser, createPatient, selectedDate, getAppointment, fixAppointment, alerts, form, submitData, myAppointment }
             }
         }).mount('#app')
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
     </script>
 </body>
 </html>
